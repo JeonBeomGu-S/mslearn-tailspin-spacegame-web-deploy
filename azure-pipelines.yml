@@ -6,15 +6,18 @@ variables:
   releaseBranchName: 'release'
 
 stages:
+# -------------------
+# Build Stage (Self-hosted Linux)
+# -------------------
 - stage: 'Build'
   displayName: 'Build the web application'
   jobs: 
   - job: 'Build'
     displayName: 'Build job'
     pool:
-      vmImage: 'ubuntu-22.04'
+      name: PRO690                # Self-hosted agent pool
       demands:
-      - npm
+        - agent.name -equals Linux-Beomgu  # Self-hosted agent name
 
     variables:
       wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
@@ -70,14 +73,19 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
-- stage: 'Dev'
+# -------------------
+# Test Stage (Self-hosted Linux)
+# -------------------
+- stage: 'Test'
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
   condition:  succeeded()
   jobs:
   - deployment: Deploy
     pool:
-      vmImage: 'ubuntu-22.04'
+      name: PRO690                # Self-hosted agent pool
+      demands:
+        - agent.name -equals Linux-Beomgu  # Self-hosted agent name
     environment: dev
     variables:
     - group: Release
@@ -95,13 +103,17 @@ stages:
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
+# -------------------
+# Staging Stage (Microsoft-hosted Linux) + Manual Approval
+# -------------------
 - stage: 'Staging'
   displayName: 'Deploy to the staging environment'
-  dependsOn: Dev
+  dependsOn: Test
+  condition: succeeded()
   jobs:
   - deployment: Deploy
     pool:
-      vmImage: 'ubuntu-22.04'
+      vmImage: 'ubuntu-22.04'  # Microsoft-hosted
     environment: staging
     variables:
     - group: 'Release'
