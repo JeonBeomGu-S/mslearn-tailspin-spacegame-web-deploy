@@ -21,6 +21,10 @@ stages:
       dotnetSdkVersion: '8.x'
 
     steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Use Node.js 18'
     - task: UseDotNet@2
       displayName: 'Use .NET SDK $(dotnetSdkVersion)'
       inputs:
